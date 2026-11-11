@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { LocalStudyWindow } from "@/components/local-study-window";
 import { ReportLoadForm } from "@/components/report-load-form";
+import { StudySelectWithFilter } from "@/components/study-select-with-filter";
+import { getStudyIdsWithVotes } from "@/utils/studies-with-votes";
 import {
   StudyNewStyleCaptionBreakdown,
   StudyNewStyleUserTable,
@@ -821,6 +823,16 @@ export default async function NewStyleReportPage({
     notFound();
   }
 
+  const studyIdsWithVotes = await getStudyIdsWithVotes(
+    supabase,
+    studies.map((study) => study.id),
+  );
+  const studySelectOptions = studies.map((study) => ({
+    id: study.id,
+    label: getStudyLabel(study),
+    hasVotes: studyIdsWithVotes.has(study.id),
+  }));
+
   const mappings = await getStudyCaptionMappings(supabase, requestedStudyId);
   const mappingIds = mappings.map((mapping) => mapping.id);
   const captionIds = [...new Set(mappings.map((mapping) => mapping.caption_id))];
@@ -895,21 +907,12 @@ export default async function NewStyleReportPage({
               suffix: "new-style-report",
             }}
           >
-            <label className="app-muted space-y-1 text-sm">
-              <span className="block">Change Study</span>
-              <select
-                name="studyId"
-                defaultValue={requestedStudyId.toString()}
-                disabled={studies.length === 0}
-                className="app-input h-9 min-w-80 rounded-md px-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {studies.map((study) => (
-                  <option key={study.id} value={study.id}>
-                    {getStudyLabel(study)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <StudySelectWithFilter
+              name="studyId"
+              options={studySelectOptions}
+              defaultValue={requestedStudyId.toString()}
+              disabled={studies.length === 0}
+            />
             <label className="app-muted space-y-1 text-sm">
               <span className="block">Min user nav events</span>
               <input

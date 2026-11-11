@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { ReportLoadForm } from "@/components/report-load-form";
+import { StudySelectWithFilter } from "@/components/study-select-with-filter";
+import { getStudyIdsWithVotes } from "@/utils/studies-with-votes";
 import {
   SelectedUserReportControls,
   type SelectedUserReportControlOption,
@@ -468,6 +470,16 @@ export default async function SelectedUserReportPage({
     notFound();
   }
 
+  const studyIdsWithVotes = await getStudyIdsWithVotes(
+    supabase,
+    studies.map((study) => study.id),
+  );
+  const studySelectOptions = studies.map((study) => ({
+    id: study.id,
+    label: getStudyLabel(study),
+    hasVotes: studyIdsWithVotes.has(study.id),
+  }));
+
   const mappings = await getStudyCaptionMappings(supabase, [requestedStudyId]);
   const voteRows = await getVotesByStudyCaptionMappingId(
     supabase,
@@ -573,21 +585,12 @@ export default async function SelectedUserReportPage({
               suffix: "selected-user-report",
             }}
           >
-            <label className="app-muted space-y-1 text-sm">
-              <span className="block">Study</span>
-              <select
-                name="studyId"
-                defaultValue={requestedStudyId.toString()}
-                disabled={studies.length === 0}
-                className="app-input h-9 min-w-80 rounded-md px-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {studies.map((study) => (
-                  <option key={study.id} value={study.id}>
-                    {getStudyLabel(study)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <StudySelectWithFilter
+              name="studyId"
+              options={studySelectOptions}
+              defaultValue={requestedStudyId.toString()}
+              disabled={studies.length === 0}
+            />
             <input type="hidden" name="userId" value="" />
           </ReportLoadForm>
           <p className="app-muted text-sm">Study window: {formatStudyWindow(selectedStudy)}</p>

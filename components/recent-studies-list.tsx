@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const NEW_STYLE_MIN_STUDY_ID = 7;
+const LAST_SEEN_STUDY_ID_STORAGE_KEY = "lolReport:lastSeenStudyId";
 
 export type RecentStudyRow = {
   id: number;
@@ -39,12 +40,13 @@ const getStatusBadgeClassName = (status: RecentStudyRow["status"]) => {
 type StudyRowProps = {
   study: RecentStudyRow;
   isOpen: boolean;
+  isMissed: boolean;
   onHover: () => void;
   onUnhover: () => void;
   onToggle: () => void;
 };
 
-function StudyRow({ study, isOpen, onHover, onUnhover, onToggle }: StudyRowProps) {
+function StudyRow({ study, isOpen, isMissed, onHover, onUnhover, onToggle }: StudyRowProps) {
   const reportLinks = [
     { title: "Study detail", href: `/study/${study.id}/study-detail` },
     { title: "Engagement risk", href: `/study/${study.id}/engagement-risk` },
@@ -79,6 +81,11 @@ function StudyRow({ study, isOpen, onHover, onUnhover, onToggle }: StudyRowProps
           >
             {study.status}
           </span>
+          {isMissed ? (
+            <span className="rounded-full bg-fuchsia-500/18 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-900 ring-1 ring-fuchsia-500/35 dark:text-fuchsia-100">
+              New since your last visit
+            </span>
+          ) : null}
           <span className="truncate text-sm font-medium">{study.label}</span>
         </span>
         <span className="app-muted flex items-center gap-3 text-xs">
@@ -113,6 +120,29 @@ function StudyRow({ study, isOpen, onHover, onUnhover, onToggle }: StudyRowProps
 export function RecentStudiesList({ groups }: RecentStudiesListProps) {
   const [pinnedIds, setPinnedIds] = useState<Set<number>>(new Set());
   const [hoveredId, setHoveredId] = useState<number | null>(null);
+  const [missedIds, setMissedIds] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    const allIds = groups.flatMap((group) => group.studies.map((study) => study.id));
+    if (allIds.length === 0) {
+      return;
+    }
+
+    try {
+      const storedValue = window.localStorage.getItem(LAST_SEEN_STUDY_ID_STORAGE_KEY);
+      const lastSeenId = storedValue ? Number.parseInt(storedValue, 10) : null;
+
+      if (lastSeenId !== null && Number.isFinite(lastSeenId)) {
+        setMissedIds(new Set(allIds.filter((id) => id > lastSeenId)));
+      }
+
+      const latestId = Math.max(...allIds);
+      window.localStorage.setItem(LAST_SEEN_STUDY_ID_STORAGE_KEY, latestId.toString());
+    } catch {
+      // Local storage may be unavailable (private browsing, disabled storage, etc.) -
+      // the "missed since last visit" signal is skipped, nothing else depends on it.
+    }
+  }, [groups]);
 
   const togglePinned = (id: number) => {
     setPinnedIds((current) => {
@@ -144,6 +174,7 @@ export function RecentStudiesList({ groups }: RecentStudiesListProps) {
                 key={study.id}
                 study={study}
                 isOpen={pinnedIds.has(study.id) || hoveredId === study.id}
+                isMissed={missedIds.has(study.id)}
                 onHover={() => setHoveredId(study.id)}
                 onUnhover={() =>
                   setHoveredId((current) => (current === study.id ? null : current))
