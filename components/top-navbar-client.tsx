@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Search, Bell, LogOut } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -28,6 +29,13 @@ export function TopNavbarClient({ user, siteTitle }: TopNavbarClientProps) {
     { label: "Dashboard Overview", value: "/", category: "Pages" },
     { label: "Study-to-Study Comparison", value: "/reports/study-comparison", category: "Reports" },
     { label: "Weekly Humor Study Summary", value: "/reports/weekly-study-summary", category: "Reports" },
+    { label: "Vote Outcomes by Demographic", value: "/reports/demographics", category: "Reports" },
+  ];
+
+  const CROSS_STUDY_NAV_LINKS = [
+    { label: "Study Comparison", href: "/reports/study-comparison" },
+    { label: "Weekly Summary", href: "/reports/weekly-study-summary" },
+    { label: "Demographics", href: "/reports/demographics" },
   ];
 
   const filteredSearchPages = SEARCH_PAGES.filter(p =>
@@ -99,6 +107,19 @@ export function TopNavbarClient({ user, siteTitle }: TopNavbarClientProps) {
               {siteTitle}
             </span>
           </div>
+
+          {/* Cross-study reports (not tied to a single study) */}
+          <nav className="hidden items-center gap-1 lg:flex">
+            {CROSS_STUDY_NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted/60 hover:text-foreground"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
 
           {/* Middle Corner - Search Bar */}
           <div 

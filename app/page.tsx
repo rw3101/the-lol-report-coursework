@@ -1,8 +1,8 @@
 import {
-  RecentStudiesList,
+  StudyBrowser,
   type RecentStudyGroup,
   type RecentStudyRow,
-} from "@/components/recent-studies-list";
+} from "@/components/study-browser";
 import { TopNavbar } from "@/components/top-navbar";
 import { createClient } from "@/utils/supabase/server";
 import { isPositiveStudyVote, type StudyVoteValue } from "@/utils/study-vote-events";
@@ -238,56 +238,11 @@ export default async function Home() {
     }
   }
 
-  const latestStudyId = recentStudies[0]?.id ?? null;
-
-  const additionalReports = [
-    {
-      title: "Study detail",
-      description: "Review study vote details",
-      href: latestStudyId ? `/study/${latestStudyId}/study-detail` : null,
-    },
-    {
-      title: "Study engagement risk",
-      description: "Find low-engagement raters",
-      href: latestStudyId ? `/study/${latestStudyId}/engagement-risk` : null,
-    },
-    {
-      title: "Study voting span by user",
-      description: "Review voting duration",
-      href: latestStudyId ? `/study/${latestStudyId}/vote-timing` : null,
-    },
-    {
-      title: "Study upvote percentage by user",
-      description: "Compare individual upvote rates",
-      href: latestStudyId ? `/study/${latestStudyId}/user-upvote-rate` : null,
-    },
-    {
-      title: "Selected user report",
-      description: "Analyze selected raters together",
-      href: latestStudyId ? `/study/${latestStudyId}/selected-user-report` : null,
-    },
-    {
-      title: "Study-to-study comparison",
-      description: "Compare two studies",
-      href: "/reports/study-comparison",
-    },
-    {
-      title: "Weekly humor study summary",
-      description: "Track weekly study trends",
-      href: "/reports/weekly-study-summary",
-    },
-    {
-      title: "Vote outcomes by demographic",
-      description: "See results broken out by who voted",
-      href: "/reports/demographics",
-    },
-  ];
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopNavbar />
       <main className="page-shell flex-1 p-6">
-        <div className="mx-auto grid w-full max-w-6xl gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="mx-auto w-full max-w-6xl">
           <section className="app-panel rounded-2xl p-8">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -337,50 +292,17 @@ export default async function Home() {
               )}
             </div>
 
-            <div className="mt-8">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-lg font-semibold">Recent Studies</h2>
-                <p className="app-muted text-xs">
-                  Click or hover a study to see its reports
-                </p>
-              </div>
-              <div className="mt-3">
-                <RecentStudiesList groups={recentStudyGroups} />
-              </div>
-            </div>
           </section>
 
-          <aside className="app-card h-fit rounded-2xl p-4 lg:sticky lg:top-6">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              All Reports
-            </p>
-            <nav className="mt-3 flex flex-col gap-1.5">
-              {additionalReports.map((reportOption) =>
-                reportOption.href ? (
-                  <Link
-                    key={reportOption.title}
-                    href={reportOption.href}
-                    className="app-button rounded-lg px-3 py-2 text-sm transition"
-                  >
-                    <span className="block font-medium">{reportOption.title}</span>
-                    <span className="app-muted mt-0.5 block text-xs">
-                      {reportOption.description}
-                    </span>
-                  </Link>
-                ) : (
-                  <span
-                    key={reportOption.title}
-                    className="app-button cursor-not-allowed rounded-lg px-3 py-2 text-sm opacity-60"
-                  >
-                    <span className="block font-medium">{reportOption.title}</span>
-                    <span className="app-muted mt-0.5 block text-xs">
-                      {reportOption.description}
-                    </span>
-                  </span>
-                ),
-              )}
-            </nav>
-          </aside>
+          <section className="mt-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-lg font-semibold">Recent Studies</h2>
+              <p className="app-muted text-xs">Click a study to see its reports</p>
+            </div>
+            <div className="mt-3">
+              <StudyBrowser groups={recentStudyGroups} />
+            </div>
+          </section>
         </div>
       </main>
     </div>
