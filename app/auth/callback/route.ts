@@ -22,11 +22,10 @@ const getConfiguredSiteOrigin = () => {
 };
 
 const getRequestOrigin = (request: NextRequest) => {
-  const configuredSiteOrigin = getConfiguredSiteOrigin();
-  if (configuredSiteOrigin) {
-    return configuredSiteOrigin;
-  }
-
+  // Prefer the actual request host so the callback lands back on whichever
+  // Vercel URL (stable or commit-specific) the sign-in flow started on.
+  // NEXT_PUBLIC_SITE_URL is only a fallback here, unlike the upstream
+  // Amplify deployment where it's required to dodge leaked internal hosts.
   const forwardedHost =
     request.headers.get("x-forwarded-host") ?? request.headers.get("host");
   const forwardedProto =
@@ -35,6 +34,11 @@ const getRequestOrigin = (request: NextRequest) => {
 
   if (forwardedHost) {
     return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  const configuredSiteOrigin = getConfiguredSiteOrigin();
+  if (configuredSiteOrigin) {
+    return configuredSiteOrigin;
   }
 
   return FALLBACK_SITE_URL;

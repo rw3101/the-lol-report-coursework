@@ -22,11 +22,11 @@ const getConfiguredSiteOrigin = () => {
 };
 
 const getOrigin = async () => {
-  const configuredSiteOrigin = getConfiguredSiteOrigin();
-  if (configuredSiteOrigin) {
-    return configuredSiteOrigin;
-  }
-
+  // Prefer the actual request host so sign-in started on a commit-specific
+  // Vercel preview URL stays on that same URL through the whole OAuth flow
+  // (PKCE's code_verifier cookie is host-scoped, so mixing hosts breaks it).
+  // NEXT_PUBLIC_SITE_URL is only a fallback here, unlike the upstream
+  // Amplify deployment where it's required to dodge leaked internal hosts.
   const headersList = await headers();
   const host = headersList.get("x-forwarded-host") ?? headersList.get("host");
   const protocol =
@@ -35,6 +35,11 @@ const getOrigin = async () => {
 
   if (host) {
     return `${protocol}://${host}`;
+  }
+
+  const configuredSiteOrigin = getConfiguredSiteOrigin();
+  if (configuredSiteOrigin) {
+    return configuredSiteOrigin;
   }
 
   return FALLBACK_SITE_URL;
