@@ -33,7 +33,7 @@ export function StudySelectWithFilter({
     onlyWithData && !visibleOptions.some((option) => option.id.toString() === defaultValue);
 
   return (
-    <div className="space-y-1.5">
+    <>
       <label className="app-muted space-y-1 text-sm">
         <span className="block">Study</span>
         <select
@@ -56,7 +56,7 @@ export function StudySelectWithFilter({
           ))}
         </select>
       </label>
-      <label htmlFor={checkboxId} className="app-muted flex items-center gap-1.5 text-xs">
+      <label htmlFor={checkboxId} className="app-muted flex w-full items-center gap-1.5 text-xs">
         <input
           id={checkboxId}
           type="checkbox"
@@ -66,6 +66,6 @@ export function StudySelectWithFilter({
         />
         Only show studies with data
       </label>
-    </div>
+    </>
   );
 }

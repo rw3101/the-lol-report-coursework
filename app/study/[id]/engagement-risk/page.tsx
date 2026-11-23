@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { KpiTile } from "@/components/kpi-tile";
 import { ReportLoadForm } from "@/components/report-load-form";
 import {
   StudyEngagementRiskTable,
@@ -1003,43 +1004,34 @@ export default async function StudyEngagementRiskPage({
         </header>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <article className="app-card app-stat-card-teal rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Study Captions
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{report.caption_count.toLocaleString()}</p>
-            <p className="app-muted mt-1 text-xs">
-              {report.total_votes.toLocaleString()} votes scanned
-            </p>
-          </article>
-          <article className="app-card app-stat-card-amber rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Included Voters
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{report.included_voters.toLocaleString()}</p>
-            <p className="app-muted mt-1 text-xs">
-              {report.excluded_voters.toLocaleString()} below min votes
-            </p>
-          </article>
-          <article className="app-card app-stat-card-rose rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              High Risk Users
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{report.high_risk_users.toLocaleString()}</p>
-            <p className="app-muted mt-1 text-xs">
-              {report.very_fast_voters.toLocaleString()} users at 2s median gap or faster
-            </p>
-          </article>
-          <article className="app-card app-stat-card-sky rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Study Upvote %
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{formatPercent(report.study_upvote_percentage)}</p>
-            <p className="app-muted mt-1 text-xs">
-              Study median gap{" "}
-              {formatDurationFromMinutes(report.study_median_gap_minutes)}
-            </p>
-          </article>
+          <KpiTile
+            colorClassName="app-stat-card-teal"
+            label="Study Captions"
+            value={report.caption_count.toLocaleString()}
+            caption={`${report.total_votes.toLocaleString()} votes scanned`}
+            explanation="Distinct captions in this study that received at least one vote."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-amber"
+            label="Included Voters"
+            value={report.included_voters.toLocaleString()}
+            caption={`${report.excluded_voters.toLocaleString()} below min votes`}
+            explanation="Voters who met the minimum-votes threshold and were scored for engagement risk."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-rose"
+            label="High Risk Users"
+            value={report.high_risk_users.toLocaleString()}
+            caption={`${report.very_fast_voters.toLocaleString()} users at 2s median gap or faster`}
+            explanation="Users whose composite risk score (speed, low consensus, monotony, polarity) crossed the high-risk threshold."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-sky"
+            label="Study Upvote %"
+            value={formatPercent(report.study_upvote_percentage)}
+            caption={`Study median gap ${formatDurationFromMinutes(report.study_median_gap_minutes)}`}
+            explanation="Share of all processed votes in this study that were upvotes."
+          />
         </section>
 
         <section className="grid gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(320px,1fr)]">

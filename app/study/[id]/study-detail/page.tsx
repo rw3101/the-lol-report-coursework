@@ -11,6 +11,7 @@ import {
   type VoteDistributionRow,
 } from "./caption-gallery-shared";
 
+import { KpiTile } from "@/components/kpi-tile";
 import { ReportLoadForm } from "@/components/report-load-form";
 import { StudySelectWithFilter } from "@/components/study-select-with-filter";
 import { getStudyIdsWithVotes } from "@/utils/studies-with-votes";
@@ -884,59 +885,49 @@ export default async function StudyDetailPage({ params, searchParams }: StudyDet
         </header>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          <article className="app-card app-stat-card-teal rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Total Votes
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{report.total_votes.toLocaleString()}</p>
-          </article>
-          <article className="app-card app-stat-card-amber rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Distinct Voters
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {report.distinct_voters.toLocaleString()}
-            </p>
-          </article>
-          <article className="app-card app-stat-card-rose rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Study Upvote Rate
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {formatPercent(report.weighted_upvote_percentage)}
-            </p>
-            <p className="app-muted mt-1 text-xs">
-              Total upvotes: {report.total_upvotes.toLocaleString()}
-            </p>
-          </article>
-          <article className="app-card app-stat-card-sky rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Caption Coverage
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {report.captions_with_votes.toLocaleString()} / {report.caption_count.toLocaleString()}
-            </p>
-            <p className="app-muted mt-1 text-xs">
-              {report.caption_count === 0
-                ? "No mapped captions"
-                : formatPercent(report.captions_with_votes / report.caption_count)}{" "}
-              with at least one vote
-            </p>
-          </article>
-          <article className="app-card rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Median Time to Vote
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              {formatDurationFromMinutes(report.median_time_to_vote_minutes)}
-            </p>
-          </article>
-          <article className="app-card rounded-xl p-4">
-            <p className="app-kicker text-xs font-semibold uppercase tracking-wide">
-              Didn&apos;t Get It %
-            </p>
-            <p className="mt-2 text-2xl font-semibold">{formatPercent(didntGetItShare)}</p>
-          </article>
+          <KpiTile
+            colorClassName="app-stat-card-teal"
+            label="Total Votes"
+            value={report.total_votes.toLocaleString()}
+            explanation="Every vote event recorded for this study, across all captions."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-amber"
+            label="Distinct Voters"
+            value={report.distinct_voters.toLocaleString()}
+            explanation="Number of unique users who cast at least one vote in this study."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-rose"
+            label="Study Upvote Rate"
+            value={formatPercent(report.weighted_upvote_percentage)}
+            caption={`Total upvotes: ${report.total_upvotes.toLocaleString()}`}
+            explanation="Share of all votes in this study that were upvotes: total upvotes divided by total votes."
+          />
+          <KpiTile
+            colorClassName="app-stat-card-sky"
+            label="Caption Coverage"
+            value={`${report.captions_with_votes.toLocaleString()} / ${report.caption_count.toLocaleString()}`}
+            caption={
+              <>
+                {report.caption_count === 0
+                  ? "No mapped captions"
+                  : formatPercent(report.captions_with_votes / report.caption_count)}{" "}
+                with at least one vote
+              </>
+            }
+            explanation="How many of this study's mapped captions received at least one vote, out of all mapped captions."
+          />
+          <KpiTile
+            label="Median Time to Vote"
+            value={formatDurationFromMinutes(report.median_time_to_vote_minutes)}
+            explanation="Middle value of how long it took each vote, from when the caption was shown to when the user voted."
+          />
+          <KpiTile
+            label="Didn't Get It %"
+            value={formatPercent(didntGetItShare)}
+            explanation="Share of votes where the voter picked 'didn't get it' instead of upvoting or downvoting."
+          />
         </section>
 
         <section className="space-y-3">

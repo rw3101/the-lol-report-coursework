@@ -15,10 +15,18 @@ const QUERY_CHUNK_SIZE = 120;
 const QUERY_RETRY_ATTEMPTS = 3;
 const QUERY_RETRY_BASE_DELAY_MS = 150;
 const QUERY_PAGE_SIZE = 1000;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 type WeeklyStudySummarySearchParams = Promise<{
   limit?: string;
+  week?: string;
 }>;
+
+type WeekOption = {
+  value: string;
+  label: string;
+  studyCount: number;
+};
 
 type WeeklyStudySummaryPageProps = {
   searchParams: WeeklyStudySummarySearchParams;
@@ -151,6 +159,49 @@ const parseBoundedInteger = (
   }
 
   return { value: parsed, isValid: true };
+};
+
+const getStudyStartMs = (study: StudySummary) => {
+  const parsed = Date.parse(study.start_datetime_utc ?? study.created_datetime_utc);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getWeekStartMs = (ms: number) => {
+  const date = new Date(ms);
+  const dayOfWeek = date.getUTCDay();
+  const daysSinceMonday = (dayOfWeek + 6) % 7;
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - daysSinceMonday);
+};
+
+const formatWeekRangeLabel = (weekStartMs: number) => {
+  const formatter = new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  const weekEndMs = weekStartMs + 6 * MS_PER_DAY;
+  return `${formatter.format(new Date(weekStartMs))} - ${formatter.format(new Date(weekEndMs))}`;
+};
+
+const getWeekOptions = (studies: StudySummary[]): WeekOption[] => {
+  const countByWeekStart = new Map<number, number>();
+  for (const study of studies) {
+    const startMs = getStudyStartMs(study);
+    if (startMs === null) {
+      continue;
+    }
+
+    const weekStartMs = getWeekStartMs(startMs);
+    countByWeekStart.set(weekStartMs, (countByWeekStart.get(weekStartMs) ?? 0) + 1);
+  }
+
+  return [...countByWeekStart.entries()]
+    .sort(([left], [right]) => right - left)
+    .map(([weekStartMs, studyCount]) => ({
+      value: weekStartMs.toString(),
+      label: `Week of ${formatWeekRangeLabel(weekStartMs)}`,
+      studyCount,
+    }));
 };
 
 const getChartStudyLabel = (study: StudySummary) => {
@@ -299,7 +350,17 @@ export default async function WeeklyStudySummaryPage({
   const generatedAtUtc = new Date().toISOString();
 
   const supabase = await createClient();
-  const studies = await getStudies(supabase, studyLimitResult.value);
+  const loadedStudies = await getStudies(supabase, studyLimitResult.value);
+  const weekOptions = getWeekOptions(loadedStudies);
+  const selectedWeek = params.week?.trim() ?? "";
+  const isValidWeekSelection =
+    selectedWeek !== "" && weekOptions.some((option) => option.value === selectedWeek);
+  const studies = isValidWeekSelection
+    ? loadedStudies.filter((study) => {
+        const startMs = getStudyStartMs(study);
+        return startMs !== null && getWeekStartMs(startMs).toString() === selectedWeek;
+      })
+    : loadedStudies;
   const studyIds = studies.map((study) => study.id);
 
   const mappings = await getStudyCaptionMappings(supabase, studyIds);
@@ -365,20 +426,45 @@ export default async function WeeklyStudySummaryPage({
                   className="app-input h-9 w-40 rounded-md px-2 text-sm outline-none"
                 />
               </label>
+              <label className="app-muted space-y-1 text-sm">
+                <span className="block">Week</span>
+                <select
+                  name="week"
+                  defaultValue={isValidWeekSelection ? selectedWeek : ""}
+                  disabled={weekOptions.length === 0}
+                  className="app-input h-9 min-w-56 rounded-md px-2 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">All weeks in window</option>
+                  {weekOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label} ({option.studyCount} {option.studyCount === 1 ? "study" : "studies"})
+                    </option>
+                  ))}
+                </select>
+              </label>
               <button
                 type="submit"
-                disabled={studies.length === 0}
+                disabled={loadedStudies.length === 0}
                 className="app-button h-9 rounded-md px-3 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Refresh
               </button>
             </form>
+            <p className="app-muted text-xs">
+              The week picker only covers weeks within the loaded "Studies to include" window —
+              raise that number first to reach further back.
+            </p>
             {!studyLimitResult.isValid && params.limit ? (
               <p className="text-sm text-amber-700 dark:text-amber-300">
                 Invalid `limit` value. Using default of {DEFAULT_STUDY_LIMIT}.
               </p>
             ) : null}
-            {studies.length === 0 ? (
+            {selectedWeek !== "" && !isValidWeekSelection ? (
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Selected week isn&apos;t in the current window. Showing all loaded studies instead.
+              </p>
+            ) : null}
+            {loadedStudies.length === 0 ? (
               <p className="text-sm text-amber-700 dark:text-amber-300">
                 No studies were found in the `studies` table.
               </p>

@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * next-themes toggles a `.dark` class on <html> (see app/layout.tsx), but
+ * Tailwind v4's `dark:` variant defaults to `prefers-color-scheme` unless
+ * told otherwise. Without this, `dark:*` utilities silently follow the OS
+ * color scheme instead of the in-app Light/Dark/System picker, producing
+ * contrast bugs whenever the two disagree.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fff7ed;
   --foreground: #122033;
